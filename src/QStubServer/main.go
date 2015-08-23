@@ -4,6 +4,7 @@ package main
 import (
 	"QStubServer/ConvertInfo"
 	"QStubServer/ContentType"
+	"QStubServer/OutputLog"
 	"QStubServer/HttpServer"
 	"flag"
 	"os"
@@ -16,6 +17,8 @@ var commandPort int
 var commandSettingPath string
 // コンテントタイプリストファイルパス
 var commandContetTypeListPath string
+// ログ出力先パス
+var commandLogOutputPath string
 
 // 終了コード
 var exitCode = 0
@@ -50,6 +53,12 @@ func setup() bool {
 		return false
 	}
 
+	// ログ出力設定
+	isSuccess = OutputLog.Setup(commandLogOutputPath)
+	if !isSuccess {
+		return false
+	}
+
 	// HTTPサーバセットアップ
 	isSuccess = HttpServer.Setup(commandPort)
 	if !isSuccess {
@@ -67,6 +76,8 @@ func setupCommand() {
 	flag.StringVar(&commandSettingPath, "setting", "設定ファイルパス", "設定ファイルパスを指定して下さい。")
 	// コンテントタイプリストファイルパス
 	flag.StringVar(&commandContetTypeListPath, "contenttype", "ContetTypeリストファイルパス", "ContetTypeリストファイルパスを指定して下さい。")
+	// ログ出力先パス
+	flag.StringVar(&commandLogOutputPath, "outputlog", "ログ出力先パス", "ログの出力先パスを指定して下さい。")
 
 	flag.Parse()
 
@@ -77,6 +88,10 @@ func setupCommand() {
 	// コンテントタイプリストファイルパス
 	if commandContetTypeListPath == "ContetTypeリストファイルパス" {
 		commandContetTypeListPath = ""
+	}
+	// コンテントタイプリストファイルパス
+	if commandLogOutputPath == "ログ出力先パス" {
+		commandLogOutputPath = ""
 	}
 
 }

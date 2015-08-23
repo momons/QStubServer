@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 // コンテントタイプ一覧
-var ContentTypeList map[string] string
+var ContentTypeList map[string]string
 
-// 設定ファイルパス
+// コンテントタイプファイルパス
 var filePath string
 
 // 初期設定
@@ -44,7 +44,7 @@ func Setup(contentTypeFilePath string) bool {
 }
 
 // ファイル読込
-func read() (map[string] string, bool) {
+func read() (map[string]string, bool) {
 
 	// ファイル読み込み
 	data, err := ioutil.ReadFile(filePath)
@@ -53,7 +53,7 @@ func read() (map[string] string, bool) {
 		return nil, false
 	}
 
-	var list map[string] string
+	var list map[string]string
 
 	// JSONに変換
 	reader := strings.NewReader(string(data))

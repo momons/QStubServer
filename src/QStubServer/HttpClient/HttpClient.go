@@ -27,6 +27,8 @@ type HTTPClient struct {
 	ResponseHttpStatus int
 	// レスポンスヘッダ
 	ResponseHeader map[string]string
+	// レスポンスヘッダ解析前
+	ResponseHeaderBytes []byte
 	// レスポンスボディ
 	ResponseBody []byte
 }
@@ -69,14 +71,14 @@ func (cl *HTTPClient) Send() bool {
 	defer resp.Body.Close()
 
 	// ヘッダ情報取得
-	dumpResp, err := httputil.DumpResponse(resp, true)
+	cl.ResponseHeaderBytes, err = httputil.DumpResponse(resp, false)
 	if err != nil {
 		ConsoleLog.Error(fmt.Sprintln("データの受信に失敗しました: %v", err))
 		return false
 	}
 
 	// ヘッダ情報解析
-	cl.getResponseHeaders(dumpResp)
+	cl.getResponseHeaders(cl.ResponseHeaderBytes)
 
 	// ボディ部取得
 	cl.ResponseBody, err = ioutil.ReadAll(resp.Body)
@@ -102,7 +104,7 @@ func (cl *HTTPClient) getResponseHeaders(dumpResp []byte) {
 			assinedGp := assined.FindStringSubmatch(header)
 			if assinedGp != nil {
 				ConsoleLog.Output(fmt.Sprintf("%v", assinedGp))
-        cl.ResponseHttpStatus, _ = strconv.Atoi(assinedGp[2])
+				cl.ResponseHttpStatus, _ = strconv.Atoi(assinedGp[2])
 				// 取得フラグON
 				isExistHttpStatus = true
 				continue
@@ -116,5 +118,5 @@ func (cl *HTTPClient) getResponseHeaders(dumpResp []byte) {
 			}
 		}
 	}
-
 }
+

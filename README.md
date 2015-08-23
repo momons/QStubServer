@@ -6,6 +6,7 @@
 
 - 特定URLからローカルファイルを転送します。
 - 特定URLから情報を別サーバへ転送します。
+- リクエスト、レスポンスの内容をファイル出力します。
 
 #### 特定のURLからローカルファイルを転送する。
 
@@ -115,14 +116,15 @@
 > QStubServer -contenttype /usr/hoge/QStubServer/ContentTypeList.json
 ```
 
+リクエスト、レスポンス内容をファイルに出力する。<br>
+`/usr/hoge/QStubServer/log`配下へ内容を出力します。
+
+```
+> QStubServer -outputlog /usr/hoge/QStubServer/log
+```
+
 ## ビルド環境について
 
 このライブラリのビルドは<br>
 https://github.com/constabulary/gb<br>
 で行っております。
-
-## 今後のエンハンス　
-
-- 現在URLのみのフィルタを、パラメータ等でもフィルタリングできるようにする。
-- リクエストデータ、レスポンスデータをファイルへ出力する。
-- コンソールログの出力を細かく制御できるようにする。

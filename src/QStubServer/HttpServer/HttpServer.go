@@ -3,9 +3,10 @@ package HttpServer
 
 import (
 	"QStubServer/ConsoleLog"
-	"QStubServer/ConvertInfo"
 	"QStubServer/ContentType"
+	"QStubServer/ConvertInfo"
 	"QStubServer/HttpClient"
+	"QStubServer/OutputLog"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -37,6 +38,9 @@ func Setup(portNo int) bool {
 func httpHandler(w http.ResponseWriter, r *http.Request) {
 
 	ConsoleLog.InfoStrong(fmt.Sprintf("リクエスト受信: %s　　　　　　　　　　　　　", r.URL.String()))
+
+	// ログ出力
+	outputReqest(r)
 
 	// 該当のURLがあるかを検索
 	convertEntity, replaseStr := ConvertInfo.SearchURL(r.URL.String())
@@ -77,7 +81,7 @@ func connectOtherSite(url string, contentType string, w http.ResponseWriter, r *
 
 	// コンテントタイプ指定がある場合は設定
 	if len(contentType) > 0 {
-		httpClient.RequestHeader["Content-Type"] = contentType;
+		httpClient.RequestHeader["Content-Type"] = contentType
 	}
 
 	// リクエストボディ
@@ -106,6 +110,9 @@ func connectOtherSite(url string, contentType string, w http.ResponseWriter, r *
 
 	// ボディ情報設定
 	w.Write(httpClient.ResponseBody)
+
+	// レスポンスログ出力
+	outputResponse(r.URL.String(), httpClient.ResponseHeaderBytes, httpClient.ResponseBody)
 }
 
 // ファイルを読み込んで返却
@@ -132,4 +139,30 @@ func readFile(filePath string, contentType string, w http.ResponseWriter, r *htt
 
 	// ボディ情報設定
 	w.Write(data)
+}
+
+// リクエスト情報を出力
+func outputReqest(r *http.Request) {
+
+	// リクエストヘッダログ出力
+	logMsg := ""
+	for key, _ := range r.Header {
+		logMsg += fmt.Sprintf("%s : %s\n", key, r.Header.Get(key))
+	}
+	OutputLog.Output(OutputLog.LogTypeReqestHeader, r.URL.String(), []byte(logMsg))
+
+	// リクエストボディログ出力
+	bodyData := new(bytes.Buffer)
+	bodyData.ReadFrom(r.Body)
+	OutputLog.Output(OutputLog.LogTypeReqestBody, r.URL.String(), bodyData.Bytes())
+}
+
+// レスポンス情報を出力
+func outputResponse(url string, header []byte, body []byte) {
+
+	// リクエストヘッダログ出力
+	OutputLog.Output(OutputLog.LogTypeResponseHeader, url, header)
+
+	// リクエストボディログ出力
+	OutputLog.Output(OutputLog.LogTypeResponseBody, url, body)
 }
