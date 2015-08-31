@@ -61,10 +61,10 @@ func Output(logType int, url string, logMsg []byte) {
 	// 出力ファイル名設定
 	outputFile := time.Now().Format("2006.01.02_15.04.05")
 	// URLより一番後ろのパスを設定する
-	assined := regexp.MustCompile("\\/([\\w.]*)([#?]+.*)*$")
-	assinedGp := assined.FindStringSubmatch(url)
-	if assinedGp != nil && len(assinedGp) >= 2 {
-		outputFile += "_" + assinedGp[1]
+	assigned := regexp.MustCompile("\\/([\\w.]*)([#?]+.*)*$")
+	assignedGp := assigned.FindStringSubmatch(url)
+	if assignedGp != nil && len(assignedGp) >= 2 {
+		outputFile += "_" + assignedGp[1]
 	}
 	//
 	switch logType {

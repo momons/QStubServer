@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 )
 
+// リクエストヘッダ退避用
+var reqestHeaderBytes []byte
 // リクエストボディ退避用
 var reqestBodyBytes []byte
 
@@ -42,6 +45,9 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 
 	ConsoleLog.InfoStrong(fmt.Sprintf("リクエスト受信: %s　　　　　　　　　　　　　", r.URL.String()))
 
+	// ヘッダ部取得
+	reqestHeaderBytes, _ = httputil.DumpRequest(r, false)
+
 	// ボディ部読み込み
 	bodyData := new(bytes.Buffer)
 	bodyData.ReadFrom(r.Body)
@@ -49,10 +55,13 @@ func httpHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	// ログ出力
-	outputReqest(r)
+	outputReqest(r.URL.String(), reqestHeaderBytes, reqestBodyBytes)
+	ConsoleLog.Info("リクエスト受信開始")
+	ConsoleLog.Output(string(reqestHeaderBytes) + string(reqestBodyBytes))
+	ConsoleLog.Info("リクエスト受信終了")
 
 	// 該当のURLがあるかを検索
-	convertEntity, replaseStr := ConvertInfo.SearchURL(r.URL.String())
+	convertEntity, replaseStr := ConvertInfo.SearchURL(r.URL.String(), string(reqestHeaderBytes), string(reqestBodyBytes))
 	if convertEntity == nil {
 		// 情報返却
 		errMsg := fmt.Sprintf("該当のURLに対する設定が見つかりません。%s", r.URL.String())
@@ -79,51 +88,52 @@ func connectOtherSite(url string, contentType string, w http.ResponseWriter, r *
 	httpClient.RequestMethod = r.Method
 	httpClient.RequestUrl = url
 
+	ConsoleLog.Info("転送リクエスト開始")
 	// リクエストヘッダ設定
-	ConsoleLog.Info("リクエストヘッダ開始")
 	ConsoleLog.Output(fmt.Sprintf("%s %s", r.Proto, r.Method))
 	for key, _ := range r.Header {
 		httpClient.RequestHeader[key] = r.Header.Get(key)
 		ConsoleLog.Output(fmt.Sprintf("%s : %s", key, r.Header.Get(key)))
 	}
-	ConsoleLog.Info("リクエストヘッダ終了")
+
+	// リクエストボディ
+	httpClient.RequestBody = reqestBodyBytes
+	
+	ConsoleLog.Output("\n" + string(reqestBodyBytes))
 
 	// コンテントタイプ指定がある場合は設定
 	if len(contentType) > 0 {
+		contentTypeBk := httpClient.RequestHeader["Content-Type"]
 		httpClient.RequestHeader["Content-Type"] = contentType
+		ConsoleLog.Info(fmt.Sprintf("Content-Type変更 %s → %s", contentTypeBk, contentType))
 	}
 
-	// リクエストボディ
-	ConsoleLog.Info("リクエストボディ開始")
-	httpClient.RequestBody = reqestBodyBytes
-	ConsoleLog.Output(string(reqestBodyBytes))
-	ConsoleLog.Info("リクエストボディ終了")
+	ConsoleLog.Info("転送リクエスト終了")
 
 	// リクエスト送信＆レスポンス受信
 	httpClient.Send()
 
 	// ヘッダ情報設定
-	ConsoleLog.Info("レスポンスヘッダ開始")
 	w.WriteHeader(httpClient.ResponseHttpStatus)
 	for key, obj := range httpClient.ResponseHeader {
 		w.Header().Set(key, obj)
-		ConsoleLog.Output(fmt.Sprintf("%s : %s", key, obj))
 	}
-	ConsoleLog.Info("レスポンスヘッダ終了")
-
-	ConsoleLog.Info("レスポンスボディ開始")
-	ConsoleLog.Output(string(httpClient.ResponseBody))
-	ConsoleLog.Info("レスポンスボディ終了")
 
 	// ボディ情報設定
 	w.Write(httpClient.ResponseBody)
 
 	// レスポンスログ出力
 	outputResponse(r.URL.String(), httpClient.ResponseHeaderBytes, httpClient.ResponseBody)
+	ConsoleLog.Info("レスポンス開始")
+	ConsoleLog.Output(string(httpClient.ResponseHeaderBytes) + string(httpClient.ResponseBody))
+	ConsoleLog.Info("レスポンス終了")
+
 }
 
 // ファイルを読み込んで返却
 func readFile(filePath string, contentType string, w http.ResponseWriter, r *http.Request) {
+
+	ConsoleLog.Info(fmt.Sprintf("ファイル転送 %s", filePath))
 
 	// ファイル読み込み
 	data, err := ioutil.ReadFile(filePath)
@@ -139,27 +149,28 @@ func readFile(filePath string, contentType string, w http.ResponseWriter, r *htt
 	if len(contentType) > 0 {
 		// コンテントタイプ指定がある場合は設定
 		w.Header().Set("Content-Type", contentType)
+		ConsoleLog.Output(fmt.Sprintf("Content-Type %s", contentType))
 	} else {
 		// ファイル名からタイプ設定
-		w.Header().Set("Content-Type", ContentType.GetContentType(filePath))
+		fileContentType := ContentType.GetContentType(filePath)
+		w.Header().Set("Content-Type", fileContentType)
+		ConsoleLog.Output(fmt.Sprintf("Content-Type %s", fileContentType))
 	}
 
 	// ボディ情報設定
 	w.Write(data)
+
+	ConsoleLog.Output(string(data))
 }
 
 // リクエスト情報を出力
-func outputReqest(r *http.Request) {
+func outputReqest(url string, header []byte, body []byte) {
 
 	// リクエストヘッダログ出力
-	logMsg := ""
-	for key, _ := range r.Header {
-		logMsg += fmt.Sprintf("%s : %s\n", key, r.Header.Get(key))
-	}
-	OutputLog.Output(OutputLog.LogTypeReqestHeader, r.URL.String(), []byte(logMsg))
+	OutputLog.Output(OutputLog.LogTypeReqestHeader, url, header)
 
 	// リクエストボディログ出力
-	OutputLog.Output(OutputLog.LogTypeReqestBody, r.URL.String(), reqestBodyBytes)
+	OutputLog.Output(OutputLog.LogTypeReqestBody, url, body)
 }
 
 // レスポンス情報を出力

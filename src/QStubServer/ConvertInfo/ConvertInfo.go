@@ -26,7 +26,20 @@ type ConvertInfoDetailEntity struct {
 	DestPath string `json:"destPath"`
 	// コンテントタイプ
 	ContentType string `json:"contentType"`
+	// フィルタリングリスト
+	FilterList []ConvertFilterEntity `json:"filterList"`
 }
+// コンバートフィルタリングEntity
+type ConvertFilterEntity struct {
+	// フィルタリングタイプ
+	Type string `json:"type"`
+	// フィルタリング条件
+	Condition string `json:"condition"`
+}
+
+// フィルタリングタイプ
+var FilterTypeHeader string = "header"	// ヘッダ
+var FilterTypeBody string = "body"			// ボディ
 
 // 設定ファイルパス
 var filePath string
@@ -86,18 +99,50 @@ func read() (*ConvertInfoEntity, bool) {
 }
 
 // 検索
-func SearchURL(url string) (*ConvertInfoDetailEntity, string) {
+func SearchURL(
+		url string, 
+		header string,
+		body string,
+	) (*ConvertInfoDetailEntity, string) {
 
 	// 上から順に該当するものを検索
 	for _, entity := range ConvertInfo.ConvertList {
-		assined := regexp.MustCompile(entity.SrcURL)
-		assinedGp := assined.FindStringSubmatch(url)
-		if assinedGp != nil {
-			if len(entity.DestURL) > 0 {
-				return &entity, assined.ReplaceAllString(url, entity.DestURL)
-			} else {
-				return &entity, assined.ReplaceAllString(url, entity.DestPath)
+		assigned := regexp.MustCompile(entity.SrcURL)
+		assignedGp := assigned.FindStringSubmatch(url)
+		if assignedGp == nil {
+			// 条件にマッチしないので次へ
+			continue
+		}
+
+		// 条件を判定
+		isValid := true
+		for _, filterEntity := range entity.FilterList {
+			filterAssined := regexp.MustCompile(filterEntity.Condition)
+			var filterAssinedGp []string
+			switch(filterEntity.Type){
+				case FilterTypeHeader:
+					filterAssinedGp = filterAssined.FindStringSubmatch(header)
+				case FilterTypeBody:
+					filterAssinedGp = filterAssined.FindStringSubmatch(body)
 			}
+			if filterAssinedGp == nil {
+				// マッチしなかったのでここで終了
+				isValid = false
+				break
+			}
+		}
+		if !isValid {
+			// 条件マッチしない
+			continue
+		}
+
+		// 条件がマッチ！
+		if len(entity.DestURL) > 0 {
+			// URLが入っている場合URLを返却
+			return &entity, assigned.ReplaceAllString(url, entity.DestURL)
+		} else {
+			// その他はファイルパスを返却
+			return &entity, assigned.ReplaceAllString(url, entity.DestPath)
 		}
 	}
 

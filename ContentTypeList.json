@@ -122,5 +122,6 @@
 	"cgi" : "application/x-httpd-cgi",
 	"csv" : "text/comma-separated-values",
 	"css" : "text/css",
-	"js" : "text/javascript"
+	"js" : "text/javascript",
+	"json" : "application/json"
 }

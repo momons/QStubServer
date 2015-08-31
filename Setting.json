@@ -2,7 +2,18 @@
 	"convertList": [
 		{
 			"srcURL" : "/(.*)",
-			"destURL" : "http://localhost:9998/$1"
+			"destURL" : "http://localhost:9998/$1",
+			"contentType" : "text/plain",
+			"filterList" : [
+				{
+					"type" : "header",
+					"condition" : "Content-Type: ([\\S]+); charset=utf-8"
+				}
+			]
+		},
+		{
+			"srcURL" : "/(.*)",
+			"destPath" : "./test/webroot/index.json"
 		}
 	]
 }

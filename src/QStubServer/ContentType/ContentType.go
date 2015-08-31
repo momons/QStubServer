@@ -71,10 +71,10 @@ func read() (map[string]string, bool) {
 // ファイル名からContentTypeを返却する
 func GetContentType(filePath string) string {
 
-	assined := regexp.MustCompile("(.*)(?:\\.([^.]+$))")
-	assinedGp := assined.FindStringSubmatch(filePath)
-	if assinedGp != nil && len(assinedGp) == 3 {
-		if contentType, ok := ContentTypeList[assinedGp[2]]; ok {
+	assigned := regexp.MustCompile("(.*)(?:\\.([^.]+$))")
+	assignedGp := assigned.FindStringSubmatch(filePath)
+	if assignedGp != nil && len(assignedGp) == 3 {
+		if contentType, ok := ContentTypeList[assignedGp[2]]; ok {
 			return contentType
 		}
 	}
