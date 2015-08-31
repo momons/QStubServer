@@ -14,6 +14,9 @@ import (
 	"strconv"
 )
 
+// リクエストボディ退避用
+var reqestBodyBytes []byte
+
 // セットアップ
 func Setup(portNo int) bool {
 
@@ -38,6 +41,12 @@ func Setup(portNo int) bool {
 func httpHandler(w http.ResponseWriter, r *http.Request) {
 
 	ConsoleLog.InfoStrong(fmt.Sprintf("リクエスト受信: %s　　　　　　　　　　　　　", r.URL.String()))
+
+	// ボディ部読み込み
+	bodyData := new(bytes.Buffer)
+	bodyData.ReadFrom(r.Body)
+	reqestBodyBytes = bodyData.Bytes()
+	defer r.Body.Close()
 
 	// ログ出力
 	outputReqest(r)
@@ -86,10 +95,8 @@ func connectOtherSite(url string, contentType string, w http.ResponseWriter, r *
 
 	// リクエストボディ
 	ConsoleLog.Info("リクエストボディ開始")
-	bodyData := new(bytes.Buffer)
-	bodyData.ReadFrom(r.Body)
-	httpClient.RequestBody = bodyData.Bytes()
-	ConsoleLog.Output(bodyData.String())
+	httpClient.RequestBody = reqestBodyBytes
+	ConsoleLog.Output(string(reqestBodyBytes))
 	ConsoleLog.Info("リクエストボディ終了")
 
 	// リクエスト送信＆レスポンス受信
@@ -152,9 +159,7 @@ func outputReqest(r *http.Request) {
 	OutputLog.Output(OutputLog.LogTypeReqestHeader, r.URL.String(), []byte(logMsg))
 
 	// リクエストボディログ出力
-	bodyData := new(bytes.Buffer)
-	bodyData.ReadFrom(r.Body)
-	OutputLog.Output(OutputLog.LogTypeReqestBody, r.URL.String(), bodyData.Bytes())
+	OutputLog.Output(OutputLog.LogTypeReqestBody, r.URL.String(), reqestBodyBytes)
 }
 
 // レスポンス情報を出力
